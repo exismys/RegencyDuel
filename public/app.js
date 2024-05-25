@@ -7,8 +7,8 @@ canvas.width = ww
 canvas.height = wh
 
 const c = canvas.getContext("2d");
-let socket = new WebSocket("ws://localhost:5000/ws");
 
+let socket = new WebSocket("ws://localhost:5000/ws");
 
 socket.onopen = function(event) {
   console.log("Connection has been established with the client.")
@@ -17,6 +17,9 @@ socket.onopen = function(event) {
 
 socket.onmessage = function(event) {
   console.log("Message received from the client: ", event.data)
+  c.font = "20px Monospace"
+  c.fillStyle = "#ffffff"
+  c.fillText(event.data, 50, 50)
 };
 
 socket.onclose = function(event) {
