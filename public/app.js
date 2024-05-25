@@ -1,7 +1,18 @@
+const canvas = document.querySelector("canvas");
+
+let ww = window.innerWidth;
+let wh = window.innerHeight;
+
+canvas.width = ww
+canvas.height = wh
+
+const c = canvas.getContext("2d");
 let socket = new WebSocket("ws://localhost:5000/ws");
+
 
 socket.onopen = function(event) {
   console.log("Connection has been established with the client.")
+  socket.send("Hello from the client.")
 };
 
 socket.onmessage = function(event) {
@@ -15,3 +26,4 @@ socket.onclose = function(event) {
 socket.onerror = function(error) {
   console.log(error)
 };
+
