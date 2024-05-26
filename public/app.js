@@ -8,6 +8,10 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
+function drawSurround() {
+
+}
+
 function drawPlayground(width, height) {
   c.fillStyle = "#778da9"
   c.fillRect(100, 100, width, height) 
@@ -23,8 +27,12 @@ animatePlayground()
 let socket = new WebSocket("ws://localhost:5000/ws");
 
 socket.onopen = function(event) {
-  console.log("Connection has been established with the client.")
-  socket.send("Hello from the client.")
+  let playerName = prompt("Hey! You have entered into the arena. State you name: ")
+  let data = {
+    action: "new",
+    name: playerName
+  }
+  socket.send(JSON.stringify(data))
 };
 
 socket.onmessage = function(event) {

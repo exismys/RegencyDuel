@@ -5,7 +5,13 @@ import (
 	"golang.org/x/net/websocket"
 	"io"
 	"net/http"
+  "encoding/json"
 )
+
+type WSMessage struct {
+  Action string
+  Name string
+}
 
 type Server struct {
 	conns map[*websocket.Conn]bool
@@ -35,10 +41,12 @@ func (s *Server) readLoop(ws *websocket.Conn) {
 			fmt.Println("Read error:", err)
 			continue
 		}
-		msg := string(buf[:n])
-		fmt.Println("Received:", msg)
-		ws.Write([]byte("thanks for " + msg))
-
+    var message WSMessage
+    err = json.Unmarshal(buf[:n], &message)
+    if err != nil {
+      fmt.Println(err)
+    }
+    fmt.Println(message.Name, "has joined the arena.")
 	}
 }
 
