@@ -8,6 +8,18 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
+function drawPlayground(width, height) {
+  c.fillStyle = "#778da9"
+  c.fillRect(100, 100, width, height) 
+}
+
+function animatePlayground() {
+  requestAnimationFrame(animatePlayground);
+  drawPlayground(800, 600)
+}
+
+animatePlayground()
+
 let socket = new WebSocket("ws://localhost:5000/ws");
 
 socket.onopen = function(event) {
