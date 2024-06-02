@@ -8,18 +8,68 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
-function drawSurround() {
+function getTextHeight(text) {
+  return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
+}
 
+function renderContent(rectangle, text) {
+  const marginX = 15
+  const marginY = 20
+  const wordSpacing = 8
+  const lineSpacing = 15
+  c.fillStyle = "#0d1b2a"
+  c.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+  c.font = "16px Monospace";
+  c.fillStyle = "#ffffff"
+  const textHeight = getTextHeight(text)
+  const initialOffsetX = rectangle.x + marginX
+  const initialOffsetY = rectangle.y + textHeight + marginY
+  let offsetX = initialOffsetX
+  let offsetY = initialOffsetY
+  let lines = text.split("\n")
+  for (let line of lines) {
+    let words = line.split(" ")
+    for (let word of words) {
+      const textWidth = c.measureText(word).width
+      if (offsetX + textWidth > rectangle.x + rectangle.width - marginX) {
+        offsetX = initialOffsetX
+        offsetY += textHeight + lineSpacing
+      }
+      c.fillText(word, offsetX, offsetY)
+      offsetX += textWidth + wordSpacing
+    }
+    offsetX = initialOffsetX
+    offsetY += textHeight + lineSpacing
+  }
+}
+
+function drawSurround(data) {
+  let offsetY = 5
+  let arenaId, lenArena, lenGlobal, players
+  if (data.type == "metric") {
+    arenaId = `Arena ID: ${data.arenaId}`
+    players = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
+    lenGlobal = `Number of players globally: ${data.lenGlobal}`
+    let text = `${arenaId}\n${players}\n${lenGlobal}`
+    console.log(text)
+    let rect = {
+      x: 50,
+      y: 50,
+      width: 500,
+      height: 150
+    }
+    renderContent(rect, text)
+  }
 }
 
 function drawPlayground(width, height) {
   c.fillStyle = "#778da9"
-  c.fillRect(100, 100, width, height) 
+  c.fillRect(150, 175, width, height) 
 }
 
 function animatePlayground() {
   requestAnimationFrame(animatePlayground);
-  drawPlayground(800, 600)
+  drawPlayground(500, 375)
 }
 
 animatePlayground()
@@ -36,10 +86,8 @@ socket.onopen = function(event) {
 };
 
 socket.onmessage = function(event) {
-  console.log("Message received from the client: ", event.data)
-  c.font = "20px Monospace"
-  c.fillStyle = "#ffffff"
-  c.fillText(event.data, 50, 50)
+  console.log("Message received from the server: ", event.data)
+  drawSurround(JSON.parse(event.data))
 };
 
 socket.onclose = function(event) {

@@ -11,3 +11,7 @@ function renderLeft(c, rect, text) {
 function getTextHeight() {
 
 }
+
+let renderTextInCircle = (canvas, circle, text, align) => {
+  
+}
