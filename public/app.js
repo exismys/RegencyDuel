@@ -44,7 +44,6 @@ function renderContent(rectangle, text) {
 }
 
 function drawSurround(data) {
-  let offsetY = 5
   let arenaId, lenArena, lenGlobal, players
   if (data.type == "metric") {
     arenaId = `Arena ID: ${data.arenaId}`
@@ -59,17 +58,26 @@ function drawSurround(data) {
       height: 150
     }
     renderContent(rect, text)
+  } else if (data.type == "message") {
+    console.log("inside message")
+    let rect = {
+      x: 50,
+      y: 0,
+      width: 500,
+      height: 50
+    }
+    renderContent(rect, data.message)
   }
 }
 
 function drawPlayground(width, height) {
   c.fillStyle = "#778da9"
-  c.fillRect(150, 175, width, height) 
+  c.fillRect(150, 185, width, height) 
 }
 
 function animatePlayground() {
   requestAnimationFrame(animatePlayground);
-  drawPlayground(500, 375)
+  drawPlayground(720, 400)
 }
 
 animatePlayground()

@@ -43,6 +43,7 @@ type MessageToClient struct {
   LenArena int `json:"lenArena"`
   LenGlobal int `json:"lenGlobal"`
   Players [2]string `json:"players"`
+  Message string `json:"message"`
 }
 
 type Server struct {
@@ -66,6 +67,15 @@ func (s *Server) handleWS(ws *websocket.Conn) {
 	s.processDuel(ws, arenaId)
 }
 
+func (s *Server) broadcastMessage(data []byte, arenaId int) {
+  conns := arenas[arenaId]
+  for i := 0; i < len(conns); i++ {
+    if conns[i] != nil {
+      conns[i].Write(data)
+    }
+  }
+}
+
 func (s *Server) processDuel(ws *websocket.Conn, arenaId int) {
 	buf := make([]byte, 1024)
 	for {
@@ -78,24 +88,28 @@ func (s *Server) processDuel(ws *websocket.Conn, arenaId int) {
 			fmt.Println("Read error:", err)
 			continue
 		}
-    var message WSMessage
-    err = json.Unmarshal(buf[:n], &message)
+    var imessage WSMessage
+    err = json.Unmarshal(buf[:n], &imessage)
     if err != nil {
       fmt.Println(err)
     }
-    res := fmt.Sprintf("%s has joined the arena (ID: %d)", message.Name, arenaId)
+    res := fmt.Sprintf("%s has joined the arena (ID: %d)", imessage.Name, arenaId)
     fmt.Println(res)
-    ws.Write([]byte(res))
-    mtc := MessageToClient{
+    message := MessageToClient{
+      Kind: "message",
+      Message: res,
+    }
+    data, err := json.Marshal(&message)
+    ws.Write(data)
+    metric := MessageToClient{
       Kind: "metric",
       ArenaId: arenaId,
       LenArena: 2,
       LenGlobal: len(s.conns),
       Players: [2]string{"Ritesh", "Rakesh"},
     }
-    data, err := json.Marshal(&mtc)
-    ws.Write(data)
-    fmt.Println("Number of players in the global arena: ", len(s.conns))
+    data, err = json.Marshal(&metric)
+    s.broadcastMessage(data, arenaId)
 	}
 }
 
