@@ -8,21 +8,35 @@ import (
   "encoding/json"
 )
 
-const maxArenaSession int = 20
-var arenas [maxArenaSession][2]*websocket.Conn
+type Player struct {
+  conn *websocket.Conn
+  username string
+  score int
+}
 
-func enterArena(ws *websocket.Conn) (int, bool) {
+type IMessage struct {
+  Kind string `json:"type"`
+  Username string `json:"username"`
+  Score int `json:"score"`
+}
+
+const maxArenaSession int = 20
+var arenas [maxArenaSession][2]Player
+
+func enterArena(ws *websocket.Conn, imessage *IMessage) (int, bool) {
   for i := 0; i < maxArenaSession; i++ {
     count := 0
-    for _, conn := range arenas[i] {
-      if conn != nil {
+    for _, player := range arenas[i] {
+      if player.conn != nil {
         count++
       }
     }
     if count < 2 {
       for j := 0; j < 2; j++ {
-        if arenas[i][j] == nil {
-          arenas[i][j] = ws
+        if arenas[i][j].conn == nil {
+          arenas[i][j].conn = ws
+          arenas[i][j].username = imessage.Username
+          arenas[i][j].score = imessage.Score
           return i, true
         } 
       }
@@ -32,15 +46,9 @@ func enterArena(ws *websocket.Conn) (int, bool) {
   return -1, false
 }
 
-type WSMessage struct {
-  Name string
-  Action string
-}
-
 type MessageToClient struct {
   Kind string `json:"type"`
   ArenaId int `json:"arenaId"` 
-  LenArena int `json:"lenArena"`
   LenGlobal int `json:"lenGlobal"`
   Players [2]string `json:"players"`
   Message string `json:"message"`
@@ -58,17 +66,11 @@ func NewServer() *Server {
 
 func (s *Server) handleWS(ws *websocket.Conn) {
 	fmt.Println("New connection from", ws.RemoteAddr())
-  arenaId, ok := enterArena(ws); 
-  if !ok {
-    ws.Write([]byte("Can't join the arena because of an error"))
-    return
-  }
-  s.conns[ws] = true
-	s.processDuel(ws, arenaId)
+	s.processNewConn(ws)
 }
 
 func (s *Server) broadcastMessage(data []byte, arenaId int) {
-  conns := arenas[arenaId]
+  conns := [2]*websocket.Conn{arenas[arenaId][0].conn, arenas[arenaId][1].conn}
   for i := 0; i < len(conns); i++ {
     if conns[i] != nil {
       conns[i].Write(data)
@@ -76,7 +78,8 @@ func (s *Server) broadcastMessage(data []byte, arenaId int) {
   }
 }
 
-func (s *Server) processDuel(ws *websocket.Conn, arenaId int) {
+func (s *Server) processNewConn(ws *websocket.Conn) {
+  // Read incoming messages
 	buf := make([]byte, 1024)
 	for {
 		n, err := ws.Read(buf)
@@ -88,27 +91,42 @@ func (s *Server) processDuel(ws *websocket.Conn, arenaId int) {
 			fmt.Println("Read error:", err)
 			continue
 		}
-    var imessage WSMessage
+    var imessage IMessage
     err = json.Unmarshal(buf[:n], &imessage)
     if err != nil {
       fmt.Println(err)
     }
-    res := fmt.Sprintf("%s has joined the arena (ID: %d)", imessage.Name, arenaId)
-    fmt.Println(res)
-    message := MessageToClient{
-      Kind: "message",
-      Message: res,
+
+    // Enter to Arena
+    var arenaId int
+    if imessage.Kind == "new conn" {
+      var res string
+      arenaId, ok := enterArena(ws, &imessage)
+      if !ok {
+        res = fmt.Sprintf("Can't join the arena due to some error!")
+      } else {
+        res = fmt.Sprintf("%s has join the arena (ID: %d)", imessage.Username, arenaId)
+        s.conns[ws] = true
+      }
+      message := MessageToClient{
+        Kind: "message",
+        Message: res,
+      }
+      data, _ := json.Marshal(&message)
+      ws.Write(data)
     }
-    data, err := json.Marshal(&message)
-    ws.Write(data)
+
+    // Broadcast common metrics
     metric := MessageToClient{
       Kind: "metric",
       ArenaId: arenaId,
-      LenArena: 2,
       LenGlobal: len(s.conns),
-      Players: [2]string{"Ritesh", "Rakesh"},
+      Players: [2]string{
+        arenas[arenaId][0].username,
+        arenas[arenaId][1].username,
+      },
     }
-    data, err = json.Marshal(&metric)
+    data, err := json.Marshal(&metric)
     s.broadcastMessage(data, arenaId)
 	}
 }

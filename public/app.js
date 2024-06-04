@@ -44,7 +44,7 @@ function renderContent(rectangle, text) {
 }
 
 function drawSurround(data) {
-  let arenaId, lenArena, lenGlobal, players
+  let arenaId, lenGlobal, players
   if (data.type == "metric") {
     arenaId = `Arena ID: ${data.arenaId}`
     players = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
@@ -85,10 +85,10 @@ animatePlayground()
 let socket = new WebSocket("ws://localhost:5000/ws");
 
 socket.onopen = function(event) {
-  let playerName = prompt("Hey! You have entered into the arena. State you name: ")
+  let username = prompt("Hey! You have entered into the arena. State your username: ")
   let data = {
-    action: "new",
-    name: playerName
+    type: "new conn",
+    username: username
   }
   socket.send(JSON.stringify(data))
 };
