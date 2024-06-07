@@ -101,9 +101,10 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
 
     // Enter to Arena
     var arenaId int
+    var ok bool
     if imessage.Kind == "new conn" {
       var res string
-      arenaId, ok := enterArena(ws, &imessage)
+      arenaId, ok = enterArena(ws, &imessage)
       if !ok {
         res = fmt.Sprintf("Can't join the arena due to some error!")
       } else {

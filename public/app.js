@@ -8,17 +8,6 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
-
-// Configure playground
-const playground = {
-  x: 150,
-  y: 185,
-  width: 720,
-  height: 400,
-  labelFont: "monospace",
-  labelFontSize: "20px"
-}
-
 function getTextHeight(text) {
   return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
 }
@@ -79,30 +68,47 @@ function drawSurround(data) {
   }
 }
 
+// Configure playground
+const playground = {
+  x: 150,
+  y: 185,
+  width: 720,
+  height: 400,
+  labelFont: "monospace",
+  labelFontSize: "20px"
+}
+
+let playgroundData = {
+  players: ["", ""],
+}
+
 // p: playground rectange, data: json websocket message
 function drawPlayground(p, data) {
-    c.fillStyle = "#778da9"
-    c.fillRect(p.x, p.y, p.width, p.height)
-      // Render player labels
-  if (Object.keys(data).length != 0) {
-        player1 = data.players[0].username == "" ? "Player 1" : data.players[0].username
-    player2 = data.players[1].username == "" ? "Player 2" : data.players[1].username
-    let labelHeight = getTextHeight(player1)
-    let width1 = c.measureText(player1).width
-    let width2 = c.measureText(player2).width
-    c.fillStyle = "rgba(255, 204, 0, 0.5)"
-    c.fillRect(p.x, p.y, width1, labelHeight)
-    c.fillRect(p.x - width2, p.y, width2, labelHeight)
-    c.fillStyle = "#ffffff"
-    c.fillText(player1, p.x, p.y + labelHeight)
-    c.fillText(player2, p.x + p.width - width2, p.y + labelHeight)
-  }
+  // Render playground outline
+  c.fillStyle = "#778da9"
+  c.fillRect(p.x, p.y, p.width, p.height)
+
+  // Render player labels
+  player1 = data.players[0] == "" ? "Player 1" : data.players[0]
+  player2 = data.players[1] == "" ? "Player 2" : data.players[1]
+  let labelHeight = getTextHeight(player1)
+  let width1 = c.measureText(player1).width
+  let width2 = c.measureText(player2).width
+  c.fillStyle = "rgba(255, 204, 0, 0.5)"
+  c.fillRect(p.x, p.y, width1, labelHeight)
+  c.fillRect(p.x + p.width - width2, p.y, width2, labelHeight)
+  c.fillStyle = "#ffffff"
+  c.fillText(player1, p.x, p.y + labelHeight)
+  c.fillText(player2, p.x + p.width - width2, p.y + labelHeight)
+  
+  // Render player positions
+
 }
 
 // Call refresh
 function animatePlayground() {
   requestAnimationFrame(animatePlayground);
-  drawPlayground(playground, {})
+  drawPlayground(playground, playgroundData)
 }
 
 animatePlayground()
@@ -122,7 +128,7 @@ socket.onmessage = function(event) {
   console.log("Message received from the server: ", event.data)
   let data = JSON.parse(event.data)
   drawSurround(data)
-  drawPlayground(playground, data)
+  playgroundData = data
 };
 
 socket.onclose = function(event) {
