@@ -8,6 +8,17 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
+
+// Configure playground
+const playground = {
+  x: 150,
+  y: 185,
+  width: 720,
+  height: 400,
+  labelFont: "monospace",
+  labelFontSize: "20px"
+}
+
 function getTextHeight(text) {
   return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
 }
@@ -50,7 +61,6 @@ function drawSurround(data) {
     players = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
     lenGlobal = `Number of players globally: ${data.lenGlobal}`
     let text = `${arenaId}\n${players}\n${lenGlobal}`
-    console.log(text)
     let rect = {
       x: 50,
       y: 50,
@@ -59,7 +69,6 @@ function drawSurround(data) {
     }
     renderContent(rect, text)
   } else if (data.type == "message") {
-    console.log("inside message")
     let rect = {
       x: 50,
       y: 0,
@@ -70,14 +79,30 @@ function drawSurround(data) {
   }
 }
 
-function drawPlayground(width, height) {
-  c.fillStyle = "#778da9"
-  c.fillRect(150, 185, width, height) 
+// p: playground rectange, data: json websocket message
+function drawPlayground(p, data) {
+    c.fillStyle = "#778da9"
+    c.fillRect(p.x, p.y, p.width, p.height)
+      // Render player labels
+  if (Object.keys(data).length != 0) {
+        player1 = data.players[0].username == "" ? "Player 1" : data.players[0].username
+    player2 = data.players[1].username == "" ? "Player 2" : data.players[1].username
+    let labelHeight = getTextHeight(player1)
+    let width1 = c.measureText(player1).width
+    let width2 = c.measureText(player2).width
+    c.fillStyle = "rgba(255, 204, 0, 0.5)"
+    c.fillRect(p.x, p.y, width1, labelHeight)
+    c.fillRect(p.x - width2, p.y, width2, labelHeight)
+    c.fillStyle = "#ffffff"
+    c.fillText(player1, p.x, p.y + labelHeight)
+    c.fillText(player2, p.x + p.width - width2, p.y + labelHeight)
+  }
 }
 
+// Call refresh
 function animatePlayground() {
   requestAnimationFrame(animatePlayground);
-  drawPlayground(720, 400)
+  drawPlayground(playground, {})
 }
 
 animatePlayground()
@@ -95,7 +120,9 @@ socket.onopen = function(event) {
 
 socket.onmessage = function(event) {
   console.log("Message received from the server: ", event.data)
-  drawSurround(JSON.parse(event.data))
+  let data = JSON.parse(event.data)
+  drawSurround(data)
+  drawPlayground(playground, data)
 };
 
 socket.onclose = function(event) {

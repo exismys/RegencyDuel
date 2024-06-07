@@ -70,10 +70,12 @@ func (s *Server) handleWS(ws *websocket.Conn) {
 }
 
 func (s *Server) broadcastMessage(data []byte, arenaId int) {
+  fmt.Println("Inside broadcast")
   conns := [2]*websocket.Conn{arenas[arenaId][0].conn, arenas[arenaId][1].conn}
   for i := 0; i < len(conns); i++ {
     if conns[i] != nil {
       conns[i].Write(data)
+      fmt.Println("Broadcasted", string(data))
     }
   }
 }
@@ -114,6 +116,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       }
       data, _ := json.Marshal(&message)
       ws.Write(data)
+      fmt.Println("Send: ", string(data))
     }
 
     // Broadcast common metrics
@@ -127,7 +130,9 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       },
     }
     data, err := json.Marshal(&metric)
+    fmt.Println("To broadcast: ", string(data))
     s.broadcastMessage(data, arenaId)
+
 	}
 }
 
