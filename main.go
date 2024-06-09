@@ -12,12 +12,15 @@ type Player struct {
   conn *websocket.Conn
   username string
   score int
+  pos [2]float32
 }
 
 type IMessage struct {
   Kind string `json:"type"`
   Username string `json:"username"`
   Score int `json:"score"`
+  PlayerOnePos [2]float32 `json:"playerOnePos"`
+  PlayerTwoPos [2]float32 `json:"playerTwoPos"`
 }
 
 const maxArenaSession int = 20
@@ -37,6 +40,11 @@ func enterArena(ws *websocket.Conn, imessage *IMessage) (int, bool) {
           arenas[i][j].conn = ws
           arenas[i][j].username = imessage.Username
           arenas[i][j].score = imessage.Score
+          if j == 0 {
+            arenas[i][j].pos = imessage.PlayerOnePos
+          } else {
+            arenas[i][j].pos = imessage.PlayerTwoPos
+          }
           return i, true
         } 
       }
@@ -48,10 +56,13 @@ func enterArena(ws *websocket.Conn, imessage *IMessage) (int, bool) {
 
 type MessageToClient struct {
   Kind string `json:"type"`
+  Message string `json:"message"`
   ArenaId int `json:"arenaId"` 
   LenGlobal int `json:"lenGlobal"`
   Players [2]string `json:"players"`
-  Message string `json:"message"`
+  Scores [2]int `json:"scores"`
+  PlayerOnePos [2]float32 `json:"playerOnePos"`
+  PlayerTwoPos [2]float32 `json:"playerTwoPos"`
 }
 
 type Server struct {
@@ -110,6 +121,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       } else {
         res = fmt.Sprintf("%s has join the arena (ID: %d)", imessage.Username, arenaId)
         s.conns[ws] = true
+
       }
       message := MessageToClient{
         Kind: "message",
@@ -121,14 +133,21 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
     }
 
     // Broadcast common metrics
+    arena := arenas[arenaId]
     metric := MessageToClient{
       Kind: "metric",
       ArenaId: arenaId,
       LenGlobal: len(s.conns),
       Players: [2]string{
-        arenas[arenaId][0].username,
-        arenas[arenaId][1].username,
+        arena[0].username,
+        arena[1].username,
       },
+      Scores: [2]int{
+        arena[0].score,
+        arena[1].score,
+      },
+      PlayerOnePos: arena[0].pos,
+      PlayerTwoPos: arena[1].pos,
     }
     data, err := json.Marshal(&metric)
     fmt.Println("To broadcast: ", string(data))
