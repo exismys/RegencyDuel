@@ -8,6 +8,34 @@ canvas.height = wh
 
 const c = canvas.getContext("2d");
 
+
+let arenaId, lenGlobal
+let players = ["", ""]
+let playerLeft = false
+
+// Configure playground
+const playground = {
+  x: 150,
+  y: 185,
+  width: 720,
+  height: 400,
+  labelFont: "monospace",
+  labelFontSize: "20px"
+}
+
+
+// Game metric declaration
+const playerOne = "🛩️"
+const playerTwo = "🚁"
+const playerTwoW = c.measureText(playerTwo).width
+let gameMetric = {
+  type: "metric",
+  arenaId: "",
+  scores: [0, 0],
+  playerOnePos: [playground.x, playground.y + playground.height / 2],
+  playerTwoPos: [playground.x + playground.width - playerTwoW - 5, playground.y + playground.height / 2]
+}
+
 function getTextHeight(text) {
   return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
 }
@@ -47,53 +75,33 @@ function renderContent(rectangle, text) {
   }
 }
 
-function drawSurround(data) {
-  let arenaId, lenGlobal, players
-  if (data.type == "metric") {
-    arenaId = `Arena ID: ${data.arenaId}`
-    players = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
-    lenGlobal = `Number of players globally: ${data.lenGlobal}`
-    let text = `${arenaId}\n${players}\n${lenGlobal}`
-    let rect = {
-      x: 50,
-      y: 50,
-      width: 500,
-      height: 150
-    }
-    renderContent(rect, text)
-  } else if (data.type == "message") {
-    let rect = {
-      x: 50,
-      y: 0,
-      width: 500,
-      height: 50
-    }
-    renderContent(rect, data.message)
+function drawMessage(data) {
+  let rect = {
+    x: 50,
+    y: 0,
+    width: 500,
+    height: 50
   }
+  renderContent(rect, data.message)
 }
 
-let playerLeft = false
-
-// Configure playground
-const playground = {
-  x: 150,
-  y: 185,
-  width: 720,
-  height: 400,
-  labelFont: "monospace",
-  labelFontSize: "20px"
+function drawSurround(data) {
+  arenaIdText = `Arena ID: ${data.arenaId}`
+  arenaId = data.arenaId
+  playersText = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
+  players = data.players
+  let text = `${arenaIdText}\n${playersText}`
+  let rect = {
+    x: 50,
+    y: 50,
+    width: 500,
+    height: 150
+  }
+  renderContent(rect, text)
+  console.log("surround")
 }
 
-// Game metric declaration
-const playerOne = "🛩️"
-const playerTwo = "🚁"
-const playerTwoW = c.measureText(playerTwo).width
-let gameMetric = {
-  players: ["", ""],
-  scores: [0, 0],
-  playerOnePos: [playground.x, playground.y + playground.height / 2],
-  playerTwoPos: [playground.x + playground.width - playerTwoW - 5, playground.y + playground.height / 2]
-}
+
 
 // p: playground rectange, data: json websocket message
 function drawPlayground() {
@@ -102,8 +110,7 @@ function drawPlayground() {
   c.fillRect(playground.x, playground.y, playground.width, playground.height)
 
   // Render players and player labels
-  let player = gameMetric.players[0]
-  console.log(gameMetric)
+  let player = players[0]
   if (player != "") {
     let labelHeight = getTextHeight(player)
     let width = getTextWidth(player)
@@ -114,7 +121,7 @@ function drawPlayground() {
     console.log(gameMetric.playerOnePos)
     c.fillText(playerOne, gameMetric.playerOnePos[0], gameMetric.playerOnePos[1])
   }
-  player = gameMetric.players[1]
+  player = players[1]
   if (player != "") {
     let labelHeight = getTextHeight(player)
     let width = getTextWidth(player)
@@ -157,8 +164,13 @@ socket.onmessage = function(event) {
   if (data.lenGlobal % 2 != 0) {
     playerLeft = true
   }
-  drawSurround(data)
-  gameMetric = data
+  if (data.type == "surround") {
+    drawSurround(data)
+  } else if (data.type == "message") {
+    drawMessage(data)
+  } else if (data.type == "metric") {
+    gameMetric = data
+  }
 };
 
 socket.onclose = function(event) {
@@ -169,11 +181,23 @@ socket.onerror = function(error) {
   console.log(error)
 };
 
-function updatePlayerPos() {
-  if (playerLeft) {
-
-  } else {
-
+window.addEventListener("keydown", (event) => {
+  if (event.key == "j" || event.key == "k") {
+    updatePlayerPos(event.key)
   }
-  socket.send(gameMetric)
+})
+
+function updatePlayerPos(key) {
+  let delta = key == "j" ? 1 : -1
+  if (playerLeft) {
+    if (gameMetric.playerOnePos[1] < playground.y + playground.height) {
+      gameMetric.playerOnePos[1] += delta 
+    }
+  } else {
+    if (gameMetric.playerTwoPos[1] < playground.y + playground.height) {
+      gameMetric.playerTwoPos[1] += delta 
+    }
+  }
+  gameMetric.arenaId = arenaId
+  socket.send(JSON.stringify(gameMetric))
 }

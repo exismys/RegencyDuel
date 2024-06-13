@@ -19,6 +19,20 @@ type IMessage struct {
   Kind string `json:"type"`
   Username string `json:"username"`
   Score int `json:"score"`
+  ArenaId int `json:"arenaId"`
+  Players [2]string `json:"players"`
+  Scores [2]int
+  PlayerOnePos [2]float32 `json:"playerOnePos"`
+  PlayerTwoPos [2]float32 `json:"playerTwoPos"`
+}
+
+type MessageToClient struct {
+  Kind string `json:"type"`
+  Message string `json:"message"`
+  ArenaId int `json:"arenaId"` 
+  LenGlobal int `json:"lenGlobal"`
+  Players [2]string `json:"players"`
+  Scores [2]int `json:"scores"`
   PlayerOnePos [2]float32 `json:"playerOnePos"`
   PlayerTwoPos [2]float32 `json:"playerTwoPos"`
 }
@@ -54,17 +68,6 @@ func enterArena(ws *websocket.Conn, imessage *IMessage) (int, bool) {
   return -1, false
 }
 
-type MessageToClient struct {
-  Kind string `json:"type"`
-  Message string `json:"message"`
-  ArenaId int `json:"arenaId"` 
-  LenGlobal int `json:"lenGlobal"`
-  Players [2]string `json:"players"`
-  Scores [2]int `json:"scores"`
-  PlayerOnePos [2]float32 `json:"playerOnePos"`
-  PlayerTwoPos [2]float32 `json:"playerTwoPos"`
-}
-
 type Server struct {
 	conns map[*websocket.Conn]bool
 }
@@ -81,12 +84,10 @@ func (s *Server) handleWS(ws *websocket.Conn) {
 }
 
 func (s *Server) broadcastMessage(data []byte, arenaId int) {
-  fmt.Println("Inside broadcast")
   conns := [2]*websocket.Conn{arenas[arenaId][0].conn, arenas[arenaId][1].conn}
   for i := 0; i < len(conns); i++ {
     if conns[i] != nil {
       conns[i].Write(data)
-      fmt.Println("Broadcasted", string(data))
     }
   }
 }
@@ -110,6 +111,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       fmt.Println(err)
     }
 
+    // Process in case of a new connection
     // Enter to Arena
     var arenaId int
     var ok bool
@@ -121,38 +123,73 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       } else {
         res = fmt.Sprintf("%s has join the arena (ID: %d)", imessage.Username, arenaId)
         s.conns[ws] = true
-
       }
+
+      // Type: message
       message := MessageToClient{
         Kind: "message",
         Message: res,
       }
       data, _ := json.Marshal(&message)
       ws.Write(data)
-      fmt.Println("Send: ", string(data))
+
+      // Type: surround
+      arena := arenas[arenaId]
+      surround := MessageToClient{
+        Kind: "surround",
+        ArenaId: arenaId,
+        Players: [2]string{
+          arena[0].username,
+          arena[1].username,
+        },
+        LenGlobal: len(s.conns),
+      }
+      data, _ = json.Marshal(&surround)
+      s.broadcastMessage(data, arenaId)
+    }
+
+    // Process when not a new connection
+    if imessage.Kind == "metric" {
+      // Update player metric
+      arena := arenas[imessage.ArenaId]
+      arena[0].score = imessage.Scores[0]
+      arena[1].score = imessage.Scores[1]
+      arena[0].pos = imessage.PlayerOnePos
+      arena[1].pos = imessage.PlayerTwoPos
+
+      // Broadcast metric
+      metric := MessageToClient{
+        Kind: "metric",
+        Scores: [2]int{
+          arena[0].score,
+          arena[1].score,
+        },
+        PlayerOnePos: arena[0].pos,
+        PlayerTwoPos: arena[1].pos,
+      }
+      data, _ := json.Marshal(&metric)
+      s.broadcastMessage(data, arenaId)
     }
 
     // Broadcast common metrics
-    arena := arenas[arenaId]
-    metric := MessageToClient{
-      Kind: "metric",
-      ArenaId: arenaId,
-      LenGlobal: len(s.conns),
-      Players: [2]string{
-        arena[0].username,
-        arena[1].username,
-      },
-      Scores: [2]int{
-        arena[0].score,
-        arena[1].score,
-      },
-      PlayerOnePos: arena[0].pos,
-      PlayerTwoPos: arena[1].pos,
-    }
-    data, err := json.Marshal(&metric)
-    fmt.Println("To broadcast: ", string(data))
-    s.broadcastMessage(data, arenaId)
-
+    // arena := arenas[arenaId]
+    // metric := MessageToClient{
+    //   Kind: "metric",
+    //   ArenaId: arenaId,
+    //   LenGlobal: len(s.conns),
+    //   Players: [2]string{
+    //     arena[0].username,
+    //     arena[1].username,
+    //   },
+    //   Scores: [2]int{
+    //     arena[0].score,
+    //     arena[1].score,
+    //   },
+    //   PlayerOnePos: arena[0].pos,
+    //   PlayerTwoPos: arena[1].pos,
+    // }
+    // data, err := json.Marshal(&metric)
+    // s.broadcastMessage(data, arenaId)
 	}
 }
 
