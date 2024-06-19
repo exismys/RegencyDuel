@@ -1,17 +1,9 @@
 const canvas = document.querySelector("canvas");
-
 let ww = window.innerWidth;
 let wh = window.innerHeight;
-
 canvas.width = ww
 canvas.height = wh
-
 const c = canvas.getContext("2d");
-
-
-let arenaId, lenGlobal
-let players = ["", ""]
-let playerLeft = false
 
 // Configure playground
 const playground = {
@@ -24,9 +16,56 @@ const playground = {
 }
 
 
+class Bullet {
+  constructor(id, x, y, from) {
+    this.id = id
+    this.x = x
+    this.y = y
+    this.from = from
+  }
+
+  update() {
+    if (this.from == 1) {
+      if (this.x < playground.x + playground.width - 1) {
+        this.x += 5
+      } else {
+        this.delete(this)
+      }
+    }
+    if (this.from == 2) {
+      if (this.x > playground.x) {
+        this.x -= 1
+      } else {
+        this.delete(this)
+      }
+    }
+  }
+
+  delete() {
+    let index = bullets.indexOf(this)
+    if (index > -1) {
+      bullets.splice(index, 1)
+    }
+  }
+
+  static generateId() {
+    let id = Math.floor(Math.random() * 100)
+    return id
+  }
+}
+
+var bullets = []
+
+let arenaId, lenGlobal
+let players = ["", ""]
+let playerLeft = false
+
+
 // Game metric declaration
 const playerOne = "🛩️"
 const playerTwo = "🚁"
+const playerSize = "36px monospace"
+c.font = playerSize
 const playerTwoW = c.measureText(playerTwo).width
 let gameMetric = {
   type: "metric",
@@ -36,6 +75,7 @@ let gameMetric = {
   playerTwoPos: [playground.x + playground.width - playerTwoW - 5, playground.y + playground.height / 2]
 }
 
+// Functions to render Text
 function getTextHeight(text) {
   return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
 }
@@ -91,7 +131,6 @@ function drawSurround(data) {
   renderContent(rect, text)
 }
 
-// p: playground rectange, data: json websocket message
 function drawPlayground() {
   // Render playground outline
   c.fillStyle = "#120804"
@@ -106,7 +145,7 @@ function drawPlayground() {
     c.fillRect(playground.x, playground.y, width, labelHeight)
     c.fillStyle = "#ffffff"
     c.fillText(player, playground.x, playground.y + labelHeight)
-    console.log(gameMetric.playerOnePos)
+    c.font = playerSize
     c.fillText(playerOne, gameMetric.playerOnePos[0], gameMetric.playerOnePos[1])
   }
   player = players[1]
@@ -117,8 +156,15 @@ function drawPlayground() {
     c.fillRect(playground.x + playground.width - width, playground.y, width, labelHeight)
     c.fillStyle = "#ffffff"
     c.fillText(player, playground.x + playground.width - width, playground.y + labelHeight)
-    console.log(gameMetric.playerTwoPos)
-  c.fillText(playerTwo, gameMetric.playerTwoPos[0], gameMetric.playerTwoPos[1])
+    c.font = playerSize
+    c.fillText(playerTwo, gameMetric.playerTwoPos[0], gameMetric.playerTwoPos[1])
+  }
+
+  // Render bullets
+  for (let i = 0; i < bullets.length; i++) {
+    c.font = "14px monospace"
+    c.fillText("*", bullets[i].x, bullets[i].y)
+    bullets[i].update()
   }
 }
 
@@ -131,7 +177,8 @@ function animatePlayground() {
 animatePlayground()
 
 // Socket connection events
-let socket = new WebSocket("ws://localhost:5000/ws");
+let socketUrl = "wss://e2b6-103-120-51-7.ngrok-free.app/ws"
+let socket = new WebSocket(socketUrl);
 
 socket.onopen = function(event) {
   let username = prompt("Hey! State your username to join the arena: ")
@@ -171,8 +218,20 @@ window.addEventListener("keydown", (event) => {
   if (event.key == "j" || event.key == "k") {
     updatePlayerPos(event.key)
   }
+  // Todo: fire event
   if (event.key == "f") {
-    fireGun()
+    let x, y, from
+    if (playerLeft) {
+      x = gameMetric.playerOnePos[0]
+      y = gameMetric.playerOnePos[1]
+      from = 1
+    } else {
+      x = gameMetric.playerTwoPos[0]
+      y = gameMetric.playerTwoPos[1]
+      from = 2
+    }
+    let bullet = new Bullet(Bullet.generateId(), x, y, from)
+    bullets.push(bullet)
   }
 })
 
@@ -189,8 +248,4 @@ function updatePlayerPos(key) {
   }
   gameMetric.arenaId = arenaId
   socket.send(JSON.stringify(gameMetric))
-}
-
-function fireGun() {
-
 }
