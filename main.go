@@ -21,12 +21,12 @@ type IMessage struct {
   Score int `json:"score"`
   ArenaId int `json:"arenaId"`
   Players [2]string `json:"players"`
-  Scores [2]int
+  Scores [2]int `json:"scores"`
   PlayerOnePos [2]float32 `json:"playerOnePos"`
   PlayerTwoPos [2]float32 `json:"playerTwoPos"`
 }
 
-type MessageToClient struct {
+type OMessage struct {
   Kind string `json:"type"`
   Message string `json:"message"`
   ArenaId int `json:"arenaId"` 
@@ -125,18 +125,12 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
         s.conns[ws] = true
       }
 
-      // Type: message
-      message := MessageToClient{
-        Kind: "message",
-        Message: res,
-      }
-      data, _ := json.Marshal(&message)
-      ws.Write(data)
-
-      // Type: surround
+      // This data gets broadcaster to every player in the arena
+      // whenever a new player joins
       arena := arenas[arenaId]
-      surround := MessageToClient{
-        Kind: "surround",
+      surround := OMessage{
+        Kind: "new conn",
+        Message: res,
         ArenaId: arenaId,
         Players: [2]string{
           arena[0].username,
@@ -144,7 +138,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
         },
         LenGlobal: len(s.conns),
       }
-      data, _ = json.Marshal(&surround)
+      data, _ := json.Marshal(&surround)
       s.broadcastMessage(data, arenaId)
     }
 
@@ -158,7 +152,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       arena[1].pos = imessage.PlayerTwoPos
 
       // Broadcast metric
-      metric := MessageToClient{
+      metric := OMessage{
         Kind: "metric",
         Scores: [2]int{
           arena[0].score,
@@ -170,26 +164,6 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       data, _ := json.Marshal(&metric)
       s.broadcastMessage(data, arenaId)
     }
-
-    // Broadcast common metrics
-    // arena := arenas[arenaId]
-    // metric := MessageToClient{
-    //   Kind: "metric",
-    //   ArenaId: arenaId,
-    //   LenGlobal: len(s.conns),
-    //   Players: [2]string{
-    //     arena[0].username,
-    //     arena[1].username,
-    //   },
-    //   Scores: [2]int{
-    //     arena[0].score,
-    //     arena[1].score,
-    //   },
-    //   PlayerOnePos: arena[0].pos,
-    //   PlayerTwoPos: arena[1].pos,
-    // }
-    // data, err := json.Marshal(&metric)
-    // s.broadcastMessage(data, arenaId)
 	}
 }
 

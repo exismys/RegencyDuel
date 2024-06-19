@@ -75,33 +75,21 @@ function renderContent(rectangle, text) {
   }
 }
 
-function drawMessage(data) {
-  let rect = {
-    x: 50,
-    y: 0,
-    width: 500,
-    height: 50
-  }
-  renderContent(rect, data.message)
-}
-
 function drawSurround(data) {
+  messageText = data.message
   arenaIdText = `Arena ID: ${data.arenaId}`
   arenaId = data.arenaId
   playersText = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
   players = data.players
-  let text = `${arenaIdText}\n${playersText}`
+  let text = `${messageText}\n\n${arenaIdText}\n${playersText}`
   let rect = {
     x: 50,
-    y: 50,
+    y: 0,
     width: 500,
-    height: 150
+    height: 200 
   }
   renderContent(rect, text)
-  console.log("surround")
 }
-
-
 
 // p: playground rectange, data: json websocket message
 function drawPlayground() {
@@ -164,10 +152,8 @@ socket.onmessage = function(event) {
   if (data.lenGlobal % 2 != 0) {
     playerLeft = true
   }
-  if (data.type == "surround") {
+  if (data.type == "new conn") {
     drawSurround(data)
-  } else if (data.type == "message") {
-    drawMessage(data)
   } else if (data.type == "metric") {
     gameMetric = data
   }
@@ -185,6 +171,9 @@ window.addEventListener("keydown", (event) => {
   if (event.key == "j" || event.key == "k") {
     updatePlayerPos(event.key)
   }
+  if (event.key == "f") {
+    fireGun()
+  }
 })
 
 function updatePlayerPos(key) {
@@ -200,4 +189,8 @@ function updatePlayerPos(key) {
   }
   gameMetric.arenaId = arenaId
   socket.send(JSON.stringify(gameMetric))
+}
+
+function fireGun() {
+
 }
