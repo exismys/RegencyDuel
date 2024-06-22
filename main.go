@@ -93,10 +93,14 @@ func (s *Server) broadcastMessage(data []byte, arenaId int) {
 }
 
 func (s *Server) processNewConn(ws *websocket.Conn) {
+
   // Read incoming messages
 	buf := make([]byte, 1024)
+
 	for {
+
 		n, err := ws.Read(buf)
+
 		if err != nil {
 			if err == io.EOF {
 				fmt.Println("Connection closed by", ws.RemoteAddr())
@@ -105,6 +109,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
 			fmt.Println("Read error:", err)
 			continue
 		}
+
     var imessage IMessage
     err = json.Unmarshal(buf[:n], &imessage)
     if err != nil {
@@ -128,6 +133,7 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       // This data gets broadcaster to every player in the arena
       // whenever a new player joins
       arena := arenas[arenaId]
+      
       surround := OMessage{
         Kind: "new conn",
         Message: res,
@@ -138,32 +144,32 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
         },
         LenGlobal: len(s.conns),
       }
+
       data, _ := json.Marshal(&surround)
       s.broadcastMessage(data, arenaId)
     }
 
-    // Process when not a new connection
-    if imessage.Kind == "metric" {
-      // Update player metric
+    // Process when not a new connection: Change in player's position
+    // Todo: Position not getting broadcasted for other arenas other than first (with id 0)
+    if imessage.Kind == "pos" {
+
+      // Update Player positions
       arena := arenas[imessage.ArenaId]
-      arena[0].score = imessage.Scores[0]
-      arena[1].score = imessage.Scores[1]
       arena[0].pos = imessage.PlayerOnePos
       arena[1].pos = imessage.PlayerTwoPos
 
-      // Broadcast metric
+      // Broadcast Player positions
       metric := OMessage{
-        Kind: "metric",
-        Scores: [2]int{
-          arena[0].score,
-          arena[1].score,
-        },
+        Kind: "pos",
         PlayerOnePos: arena[0].pos,
         PlayerTwoPos: arena[1].pos,
       }
+
       data, _ := json.Marshal(&metric)
       s.broadcastMessage(data, arenaId)
+
     }
+
 	}
 }
 

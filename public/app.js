@@ -6,16 +6,26 @@ canvas.width = ww
 canvas.height = wh
 const c = canvas.getContext("2d");
 
-// Configure playground
+// This is my custom class for text related renderings
+// This requires text-renderer.js import
+const r = new Renderer(c)
+
+
+// Playground configurations
 const playground = {
   x: 100,
   y: 185,
-  labelFont: "monospace",
-  labelFontSize: "20px"
 }
-
 playground["width"] = canvas.width * 0.8 - playground.x
 playground["height"] = canvas.height * 0.8 - playground.y
+
+
+// Pertinent global variables
+let usernames = ["", ""]
+let left = false
+let bullets = []
+let arenaId, numConn
+
 
 window.addEventListener("resize", () => {
   ww = window.innerWidth;
@@ -24,10 +34,11 @@ window.addEventListener("resize", () => {
   canvas.height = wh;
   playground["width"] = canvas.width * 0.8 - playground.x
   playground["height"] = canvas.height * 0.8 - playground.y
-
 })
 
+
 class Bullet {
+
   constructor(id, x, y, from) {
     this.id = id
     this.x = x
@@ -63,74 +74,32 @@ class Bullet {
     let id = Math.floor(Math.random() * 100)
     return id
   }
+
 }
 
-var bullets = []
 
-let arenaId, lenGlobal
-let players = ["", ""]
-let playerLeft = false
+// Style variables
+const iconLeft = "🛩️"
+const iconRight = "🚁"
+const paddingH = 5
+const dfont = "14px Monospace"
 
-// Game metric declaration
-const playerOne = "🛩️"
-const playerTwo = "🚁"
-const playerSize = "36px monospace"
-c.font = playerSize
-const playerTwoW = c.measureText(playerTwo).width
-let gameMetric = {
-  type: "metric",
-  arenaId: "",
-  scores: [0, 0],
-  playerOnePos: [playground.x, playground.y + playground.height / 2],
-  playerTwoPos: [playground.x + playground.width - playerTwoW - 5, playground.y + playground.height / 2]
-}
+c.font = dfont
+const iconRightWidth = getTextWidth(c, iconRight)
 
-// Functions to render Text
-function getTextHeight(text) {
-  return c.measureText(text).actualBoundingBoxAscent + c.measureText(text).actualBoundingBoxDescent;
-}
 
-function getTextWidth(text) {
-  return c.measureText(text).width
-}
+// Metric variables
+let lpos = [playground.x + paddingH, playground.y + playground.height / 2]
+let rpos = [playground.x + playground.width - iconRightWidth - paddingH, playground.y + playground.height / 2]
+let scores = [0, 0]
 
-function renderContent(rectangle, text) {
-  const marginX = 15
-  const marginY = 20
-  const wordSpacing = 8
-  const lineSpacing = 15
-  c.fillStyle = "#0d1b2a"
-  c.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height)
-  c.font = "16px Monospace";
-  c.fillStyle = "#ffffff"
-  const textHeight = getTextHeight(text)
-  const initialOffsetX = rectangle.x + marginX
-  const initialOffsetY = rectangle.y + textHeight + marginY
-  let offsetX = initialOffsetX
-  let offsetY = initialOffsetY
-  let lines = text.split("\n")
-  for (let line of lines) {
-    let words = line.split(" ")
-    for (let word of words) {
-      const textWidth = c.measureText(word).width
-      if (offsetX + textWidth > rectangle.x + rectangle.width - marginX) {
-        offsetX = initialOffsetX
-        offsetY += textHeight + lineSpacing
-      }
-      c.fillText(word, offsetX, offsetY)
-      offsetX += textWidth + wordSpacing
-    }
-    offsetX = initialOffsetX
-    offsetY += textHeight + lineSpacing
-  }
-}
 
 function drawSurround(data) {
-  messageText = data.message
-  arenaIdText = `Arena ID: ${data.arenaId}`
+  usernames = data.players
   arenaId = data.arenaId
-  playersText = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
-  players = data.players
+  let messageText = data.message
+  let arenaIdText = `Arena ID: ${data.arenaId}`
+  let playersText = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
   let text = `${messageText}\n\n${arenaIdText}\n${playersText}`
   let rect = {
     x: 50,
@@ -138,66 +107,51 @@ function drawSurround(data) {
     width: 500,
     height: 200 
   }
-  renderContent(rect, text)
+  let textQuad = r.getTextQuad(text, rect, "14px Monospace", "#ffffff", "#333333")
+  textQuad.renderTextQuad()
 }
 
-// This will draw text at (x, y) position
-// font is string in fontSize_fontFamily format
-function drawText(text, x, y, font, color) {
-  let height = getTextheight(text)
-  let width = getTextWidth(text)
-  c.fillStyle = color
-  c.font = font
-  c.fillText()
-
-}
 
 function drawPlayground() {
+
   // Render playground outline
   c.fillStyle = "#120804"
   c.fillRect(playground.x, playground.y, playground.width, playground.height)
 
   // Render players and player labels
-  let player = players[0]
-  if (player != "") {
-    let labelHeight = getTextHeight(player)
-    let width = getTextWidth(player)
-    c.fillStyle = "rgba(255, 204, 0, 0.5)"
-    c.fillRect(playground.x, playground.y, width, labelHeight)
-    c.fillStyle = "#ffffff"
-    c.font = `${playground.labelFontSize} ${playground.labelFont}`
-    c.fillText(player, playground.x, playground.y + labelHeight)
-    c.font = playerSize
-    c.fillText(playerOne, gameMetric.playerOnePos[0], gameMetric.playerOnePos[1])
+  let username = usernames[0]
+  if (username != "") {
+    let labell = r.getTextButton(username, playground.x, playground.y, dfont, "#770000", "#333333")
+    labell.renderTextButton()
+    r.renderText(iconLeft, lpos[0], lpos[1], dfont, "#770000")
   }
-  player = players[1]
-  if (player != "") {
-    let labelHeight = getTextHeight(player)
-    let width = getTextWidth(player)
-    c.fillStyle = "rgba(255, 204, 0, 0.5)"
-    c.fillRect(playground.x + playground.width - width, playground.y, width, labelHeight)
-    c.fillStyle = "#ffffff"
-    c.font = `${playground.labelFontSize} ${playground.labelFont}`
-    c.fillText(player, playground.x + playground.width - width, playground.y + labelHeight)
-    c.font = playerSize
-    c.fillText(playerTwo, gameMetric.playerTwoPos[0], gameMetric.playerTwoPos[1])
+
+  username = usernames[1]
+  if (username != "") {
+    c.font = dfont
+    let width = getTextWidth(c, username)
+    let labelr = r.getTextButton(username, playground.x + playground.width - width - 16, playground.y, dfont, "#770000", "#333333")
+    labelr.renderTextButton()
+    r.renderText(iconRight, rpos[0], rpos[1], dfont, "#770000")
   }
 
   // Render bullets
   for (let i = 0; i < bullets.length; i++) {
-    c.font = "14px monospace"
+    c.font = dfont
     c.fillText("*", bullets[i].x, bullets[i].y)
     bullets[i].update()
   }
+
 }
 
-// Call refresh
+
 function animatePlayground() {
   requestAnimationFrame(animatePlayground);
   drawPlayground()
 }
 
 animatePlayground()
+
 
 // Socket connection events
 let socketUrl = "ws://localhost:5000/ws"
@@ -209,8 +163,8 @@ socket.onopen = function(event) {
     type: "new conn",
     username: username,
     score: 0,
-    playerOnePos: gameMetric.playerOnePos,
-    playerTwoPos: gameMetric.playerTwoPos
+    playerOnePos: lpos,
+    playerTwoPos: rpos
   }
   console.log("sent: ", data)
   socket.send(JSON.stringify(data))
@@ -220,12 +174,13 @@ socket.onmessage = function(event) {
   console.log("Message received from the server: ", event.data)
   let data = JSON.parse(event.data)
   if (data.lenGlobal % 2 != 0) {
-    playerLeft = true
+    left = true
   }
   if (data.type == "new conn") {
     drawSurround(data)
-  } else if (data.type == "metric") {
-    gameMetric = data
+  } else if (data.type == "pos") {
+    lpos = data.playerOnePos
+    rpos = data.playerTwoPos
   }
 };
 
@@ -237,38 +192,61 @@ socket.onerror = function(error) {
   console.log(error)
 };
 
+
 window.addEventListener("keydown", (event) => {
+
   if (event.key == "j" || event.key == "k") {
     updatePlayerPos(event.key)
   }
-  // Todo: fire event
+
   if (event.key == "f") {
+
     let x, y, from
-    if (playerLeft) {
-      x = gameMetric.playerOnePos[0]
-      y = gameMetric.playerOnePos[1]
+
+    if (left) {
+      x = lpos[0]
+      y = lpos[1]
       from = 1
     } else {
-      x = gameMetric.playerTwoPos[0]
-      y = gameMetric.playerTwoPos[1]
+      x = rpos[0]
+      y = rpos[1]
       from = 2
     }
+
     let bullet = new Bullet(Bullet.generateId(), x, y, from)
     bullets.push(bullet)
+
+    let data = {
+      type: "bullet",
+      x: x,
+      y: y,
+      from: from
+    }
+
   }
+
 })
 
 function updatePlayerPos(key) {
+  
   let delta = key == "j" ? 1 : -1
-  if (playerLeft) {
-    if (gameMetric.playerOnePos[1] < playground.y + playground.height) {
-      gameMetric.playerOnePos[1] += delta 
+
+  if (left) {
+    if (lpos[1] < playground.y + playground.height) {
+      lpos[1] += delta 
     }
   } else {
-    if (gameMetric.playerTwoPos[1] < playground.y + playground.height) {
-      gameMetric.playerTwoPos[1] += delta 
+    if (rpos[1] < playground.y + playground.height) {
+      rpos[1] += delta 
     }
   }
-  gameMetric.arenaId = arenaId
-  socket.send(JSON.stringify(gameMetric))
+
+  let data = {
+    type: "pos",
+    arenaId: arenaId,
+    playerOnePos: lpos,
+    playerTwoPos: rpos
+  }
+  
+  socket.send(JSON.stringify(data))
 }
