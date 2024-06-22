@@ -1,20 +1,31 @@
-const canvas = document.querySelector("canvas");
 let ww = window.innerWidth;
 let wh = window.innerHeight;
+
+const canvas = document.querySelector("canvas");
 canvas.width = ww
 canvas.height = wh
 const c = canvas.getContext("2d");
 
 // Configure playground
 const playground = {
-  x: 150,
+  x: 100,
   y: 185,
-  width: 720,
-  height: 400,
   labelFont: "monospace",
   labelFontSize: "20px"
 }
 
+playground["width"] = canvas.width * 0.8 - playground.x
+playground["height"] = canvas.height * 0.8 - playground.y
+
+window.addEventListener("resize", () => {
+  ww = window.innerWidth;
+  wh = window.innerHeight;
+  canvas.width = ww;
+  canvas.height = wh;
+  playground["width"] = canvas.width * 0.8 - playground.x
+  playground["height"] = canvas.height * 0.8 - playground.y
+
+})
 
 class Bullet {
   constructor(id, x, y, from) {
@@ -59,7 +70,6 @@ var bullets = []
 let arenaId, lenGlobal
 let players = ["", ""]
 let playerLeft = false
-
 
 // Game metric declaration
 const playerOne = "🛩️"
@@ -131,6 +141,17 @@ function drawSurround(data) {
   renderContent(rect, text)
 }
 
+// This will draw text at (x, y) position
+// font is string in fontSize_fontFamily format
+function drawText(text, x, y, font, color) {
+  let height = getTextheight(text)
+  let width = getTextWidth(text)
+  c.fillStyle = color
+  c.font = font
+  c.fillText()
+
+}
+
 function drawPlayground() {
   // Render playground outline
   c.fillStyle = "#120804"
@@ -144,6 +165,7 @@ function drawPlayground() {
     c.fillStyle = "rgba(255, 204, 0, 0.5)"
     c.fillRect(playground.x, playground.y, width, labelHeight)
     c.fillStyle = "#ffffff"
+    c.font = `${playground.labelFontSize} ${playground.labelFont}`
     c.fillText(player, playground.x, playground.y + labelHeight)
     c.font = playerSize
     c.fillText(playerOne, gameMetric.playerOnePos[0], gameMetric.playerOnePos[1])
@@ -155,6 +177,7 @@ function drawPlayground() {
     c.fillStyle = "rgba(255, 204, 0, 0.5)"
     c.fillRect(playground.x + playground.width - width, playground.y, width, labelHeight)
     c.fillStyle = "#ffffff"
+    c.font = `${playground.labelFontSize} ${playground.labelFont}`
     c.fillText(player, playground.x + playground.width - width, playground.y + labelHeight)
     c.font = playerSize
     c.fillText(playerTwo, gameMetric.playerTwoPos[0], gameMetric.playerTwoPos[1])
@@ -177,7 +200,7 @@ function animatePlayground() {
 animatePlayground()
 
 // Socket connection events
-let socketUrl = "wss://e2b6-103-120-51-7.ngrok-free.app/ws"
+let socketUrl = "ws://localhost:5000/ws"
 let socket = new WebSocket(socketUrl);
 
 socket.onopen = function(event) {
