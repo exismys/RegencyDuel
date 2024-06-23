@@ -118,11 +118,11 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
 
     // Process in case of a new connection
     // Enter to Arena
-    var arenaId int
-    var ok bool
     if imessage.Kind == "new conn" {
+
+      arenaId, ok := enterArena(ws, &imessage)
+
       var res string
-      arenaId, ok = enterArena(ws, &imessage)
       if !ok {
         res = fmt.Sprintf("Can't join the arena due to some error!")
       } else {
@@ -154,7 +154,8 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
     if imessage.Kind == "pos" {
 
       // Update Player positions
-      arena := arenas[imessage.ArenaId]
+      arenaId := imessage.ArenaId
+      arena := arenas[arenaId]
       arena[0].pos = imessage.PlayerOnePos
       arena[1].pos = imessage.PlayerTwoPos
 

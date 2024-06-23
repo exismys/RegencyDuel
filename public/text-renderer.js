@@ -61,9 +61,7 @@ class TextQuad {
   }
 
   renderTextQuad() {
-    console.log(this.padding)
     this.c.fillStyle = this.bgcolor
-    console.log(this.quad.width)
     this.c.fillRect(this.quad.x, this.quad.y, this.quad.width, this.quad.height)
     this.c.font = this.font
     this.c.fillStyle = this.color
@@ -77,7 +75,6 @@ class TextQuad {
       let words = line.split(" ")
       for (let word of words) {
         const textWidth = getTextWidth(this.c, word) 
-        console.log(textWidth)
         if (offsetX + textWidth > this.quad.x + this.quad.width - this.padding) {
           offsetX = initialOffsetX
           offsetY += textHeight + this.lineSpacing
