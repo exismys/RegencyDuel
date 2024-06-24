@@ -49,14 +49,14 @@ class Bullet {
   update() {
     if (this.from == 1) {
       if (this.x < playground.x + playground.width - 1) {
-        this.x += 5
+        this.x += 10
       } else {
         this.delete(this)
       }
     }
     if (this.from == 2) {
       if (this.x > playground.x) {
-        this.x -= 1
+        this.x -= 10
       } else {
         this.delete(this)
       }
@@ -173,14 +173,17 @@ socket.onopen = function(event) {
 socket.onmessage = function(event) {
   console.log("Message received from the server: ", event.data)
   let data = JSON.parse(event.data)
-  if (data.lenGlobal % 2 != 0) {
-    left = true
-  }
   if (data.type == "new conn") {
+    if (data.lenGlobal % 2 != 0) {
+      left = true
+    }
     drawSurround(data)
   } else if (data.type == "pos") {
     lpos = data.playerOnePos
     rpos = data.playerTwoPos
+  } else if (data.type == "bullet") {
+    let bullet = new Bullet(data.bulletId, data.bulletPos[0], data.bulletPos[1], data.from)
+    bullets.push(bullet)
   }
 };
 
@@ -201,7 +204,7 @@ window.addEventListener("keydown", (event) => {
 
   if (event.key == "f") {
 
-    let x, y, from
+    let x, y, from, bulletId
 
     if (left) {
       x = lpos[0]
@@ -212,16 +215,21 @@ window.addEventListener("keydown", (event) => {
       y = rpos[1]
       from = 2
     }
+    
+    bulletId = Bullet.generateId()
 
-    let bullet = new Bullet(Bullet.generateId(), x, y, from)
+    let bullet = new Bullet(bulletId, x, y, from)
     bullets.push(bullet)
 
     let data = {
       type: "bullet",
-      x: x,
-      y: y,
+      arenaId: arenaId,
+      bulletId: bulletId,
+      bulletPos: [x, y],
       from: from
     }
+
+    socket.send(JSON.stringify(data))
 
   }
 

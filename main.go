@@ -24,6 +24,9 @@ type IMessage struct {
   Scores [2]int `json:"scores"`
   PlayerOnePos [2]float32 `json:"playerOnePos"`
   PlayerTwoPos [2]float32 `json:"playerTwoPos"`
+  BulletPos [2]float32 `json:"bulletPos"`
+  BulletFrom int `json:"from"`
+  BulletId int `json:"bulletId"`
 }
 
 type OMessage struct {
@@ -92,6 +95,15 @@ func (s *Server) broadcastMessage(data []byte, arenaId int) {
   }
 }
 
+func (s *Server) sendToOpponent(data []byte, arenaId int, ws *websocket.Conn) {
+  conns := [2]*websocket.Conn{arenas[arenaId][0].conn, arenas[arenaId][1].conn}
+  for i := 0; i < len(conns); i++ {
+    if conns[i] != nil && conns[i] != ws {
+      conns[i].Write(data)
+    }
+  }
+}
+
 func (s *Server) processNewConn(ws *websocket.Conn) {
 
   // Read incoming messages
@@ -150,7 +162,6 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
     }
 
     // Process when not a new connection: Change in player's position
-    // Todo: Position not getting broadcasted for other arenas other than first (with id 0)
     if imessage.Kind == "pos" {
 
       // Update Player positions
@@ -170,6 +181,13 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       s.broadcastMessage(data, arenaId)
 
     }
+
+    // On a new fire event
+    if imessage.Kind == "bullet" {
+      arenaId := imessage.ArenaId
+      data, _ := json.Marshal(&imessage)
+      s.sendToOpponent(data, arenaId, ws)
+    } 
 
 	}
 }
