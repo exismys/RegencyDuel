@@ -1,9 +1,15 @@
 let ww = window.innerWidth;
 let wh = window.innerHeight;
 
+const dpi = window.devicePixelRatio
+
 const canvas = document.querySelector("canvas");
-canvas.width = ww
-canvas.height = wh
+console.log(ww)
+console.log(wh)
+console.log(dpi)
+canvas.width = 1366
+canvas.height = 650
+
 const c = canvas.getContext("2d");
 
 // This is my custom class for text related renderings
@@ -13,8 +19,8 @@ const r = new Renderer(c)
 
 // Playground configurations
 const playground = {
-  x: 100,
-  y: 185,
+  x: 50,
+  y: 150,
 }
 playground["width"] = canvas.width * 0.8 - playground.x
 playground["height"] = canvas.height * 0.8 - playground.y
@@ -26,15 +32,44 @@ let left = false
 let bullets = []
 let arenaId, numConn
 
+// Style variables
+// Colors
+sbgcolor = "#7E6363"
+scolor = ""
+pbgcolor = "#3E3232"
+labelbgcolor = ""
+labelcolor = ""
+bcolor = ""
 
-window.addEventListener("resize", () => {
-  ww = window.innerWidth;
-  wh = window.innerHeight;
-  canvas.width = ww;
-  canvas.height = wh;
-  playground["width"] = canvas.width * 0.8 - playground.x
-  playground["height"] = canvas.height * 0.8 - playground.y
-})
+const iconLeft = "🛩️"
+const iconRight = "🚁"
+const paddingH = 5
+let dfont = "14px cursive"
+let iconFont = "30px Monospace"
+let labelFont = "24px Monospace"
+
+
+// Load a custom font
+// The font is linked in HTML head tag
+document.fonts.load('10pt "Lobster"').then(() => {
+  dfont = "14px Lobster"
+  iconFont = "30px Lobster"
+  labelFont = "24px Lobster"
+});
+
+
+c.font = labelFont
+const iconRightWidth = getTextWidth(c, iconRight)
+
+
+// window.addEventListener("resize", () => {
+//   ww = window.innerWidth;
+//   wh = window.innerHeight;
+//   canvas.width = ww;
+//   canvas.height = wh;
+//   playground["width"] = canvas.width * 0.8 - playground.x
+//   playground["height"] = canvas.height * 0.8 - playground.y
+// })
 
 
 class Bullet {
@@ -74,23 +109,13 @@ class Bullet {
     let id = Math.floor(Math.random() * 100)
     return id
   }
-
 }
 
-
-// Style variables
-const iconLeft = "🛩️"
-const iconRight = "🚁"
-const paddingH = 5
-const dfont = "14px Monospace"
-
-c.font = dfont
-const iconRightWidth = getTextWidth(c, iconRight)
 
 
 // Metric variables
 let lpos = [playground.x + paddingH, playground.y + playground.height / 2]
-let rpos = [playground.x + playground.width - iconRightWidth - paddingH, playground.y + playground.height / 2]
+let rpos = [playground.x + playground.width - iconRightWidth - paddingH - 1, playground.y + playground.height / 2]
 let scores = [0, 0]
 
 
@@ -107,7 +132,8 @@ function drawSurround(data) {
     width: 500,
     height: 200 
   }
-  let textQuad = r.getTextQuad(text, rect, "14px Monospace", "#ffffff", "#333333")
+  let textQuad = r.getTextQuad(text, rect, dfont, "#ffffff", sbgcolor)
+
   textQuad.renderTextQuad()
 }
 
@@ -115,24 +141,24 @@ function drawSurround(data) {
 function drawPlayground() {
 
   // Render playground outline
-  c.fillStyle = "#120804"
+  c.fillStyle = pbgcolor
   c.fillRect(playground.x, playground.y, playground.width, playground.height)
 
   // Render players and player labels
   let username = usernames[0]
   if (username != "") {
-    let labell = r.getTextButton(username, playground.x, playground.y, dfont, "#770000", "#333333")
+    let labell = r.getTextButton(username, playground.x, playground.y, labelFont, "#00ffff", "#000000")
     labell.renderTextButton()
-    r.renderText(iconLeft, lpos[0], lpos[1], dfont, "#770000")
+    r.renderText(iconLeft, lpos[0], lpos[1], "30px Monospace", "#770000")
   }
 
   username = usernames[1]
   if (username != "") {
-    c.font = dfont
+    c.font = labelFont
     let width = getTextWidth(c, username)
-    let labelr = r.getTextButton(username, playground.x + playground.width - width - 16, playground.y, dfont, "#770000", "#333333")
+    let labelr = r.getTextButton(username, playground.x + playground.width - width - 16, playground.y, labelFont, "#00ffff", "#000000")
     labelr.renderTextButton()
-    r.renderText(iconRight, rpos[0], rpos[1], dfont, "#770000")
+    r.renderText(iconRight, rpos[0], rpos[1], "30px Monospace", "#770000")
   }
 
   // Render bullets
