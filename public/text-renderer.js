@@ -22,25 +22,18 @@ class TextButton {
 
     // Default values for text decoration
     this.padding = 8
-    this.wordSpacing = 8
   } 
 
   renderTextButton() {
     this.c.font = this.font
+    let rheight = getTextHeight(this.c, this.text)
     let height = getTextHeight(this.c, this.text) + this.padding * 2
     let width = getTextWidth(this.c, this.text) + this.padding * 2
-    let quad = {
-      x: this.x,
-      y: this.y,
-      width: width,
-      height: height
-    }
-    let textQuad = new TextQuad(this.c, this.text, quad, this.font, this.color, this.bgcolor)
-    textQuad.padding = this.padding
-    textQuad.wordSpacing = this.wordSpacing
-    textQuad.renderTextQuad()
+    this.fillStyle = this.bgcolor
+    this.c.fillRect(this.x, this.y, width, height)
+    this.c.fillStyle = this.color
+    this.c.fillText(this.text, this.x + this.padding, this.y + rheight + this.padding)
   }
-
 }
 
 

@@ -31,15 +31,16 @@ let usernames = ["", ""]
 let left = false
 let bullets = []
 let arenaId, numConn
+let health = [3, 3]
 
 // Style variables
 // Colors
 sbgcolor = "#7E6363"
-scolor = ""
+scolor = "#ffffff"
 pbgcolor = "#3E3232"
-labelbgcolor = ""
-labelcolor = ""
-bcolor = ""
+lbgcolor = "#000000"
+lcolor = "#ffffff"
+bcolor = "#ffffff"
 
 const iconLeft = "🛩️"
 const iconRight = "🚁"
@@ -147,18 +148,28 @@ function drawPlayground() {
   // Render players and player labels
   let username = usernames[0]
   if (username != "") {
-    let labell = r.getTextButton(username, playground.x, playground.y, labelFont, "#00ffff", "#000000")
+    let lives = ""
+    for (let i = 0; i < health[0]; i++) {
+      lives = lives + "🤎"
+    }
+    let labell = r.getTextButton(`${username} ${lives}`, playground.x, playground.y, labelFont, lcolor, lbgcolor)
     labell.renderTextButton()
-    r.renderText(iconLeft, lpos[0], lpos[1], "30px Monospace", "#770000")
+    r.renderText(iconLeft, lpos[0], lpos[1], iconFont, lcolor)
   }
 
   username = usernames[1]
   if (username != "") {
     c.font = labelFont
-    let width = getTextWidth(c, username)
-    let labelr = r.getTextButton(username, playground.x + playground.width - width - 16, playground.y, labelFont, "#00ffff", "#000000")
+    let lives = ""
+    for (let i = 0; i < health[1]; i++) {
+      lives = lives + "🤎"
+    }
+    let width = getTextWidth(c, `${username} ${lives}`)
+    console.log(lbgcolor)
+    console.log(lcolor)
+    let labelr = r.getTextButton(`${username} ${lives}`, playground.x + playground.width - width - 16, playground.y, labelFont, lcolor, lbgcolor)
     labelr.renderTextButton()
-    r.renderText(iconRight, rpos[0], rpos[1], "30px Monospace", "#770000")
+    r.renderText(iconRight, rpos[0], rpos[1], iconFont, lcolor)
   }
 
   // Render bullets
