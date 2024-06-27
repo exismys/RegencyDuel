@@ -1,14 +1,9 @@
 let ww = window.innerWidth;
 let wh = window.innerHeight;
 
-const dpi = window.devicePixelRatio
-
 const canvas = document.querySelector("canvas");
-console.log(ww)
-console.log(wh)
-console.log(dpi)
 canvas.width = 1366
-canvas.height = 650
+canvas.height = 700
 
 const c = canvas.getContext("2d");
 
@@ -20,11 +15,37 @@ const r = new Renderer(c)
 // Playground configurations
 const playground = {
   x: 50,
-  y: 150,
+  y: 50,
 }
-playground["width"] = canvas.width * 0.8 - playground.x
-playground["height"] = canvas.height * 0.8 - playground.y
+playground["width"] = canvas.width - playground.x * 2
+playground["height"] = canvas.height - playground.y - 50
 
+// Styles
+let sbgcolor = "#7E6363"
+let scolor = "#cde617"
+let pbgcolor = "#3E3232"
+let lbgcolor = "#000000"
+let lcolor = "#ffffff"
+let bcolor = "#ffffff"
+
+let dfont = "18px Monospace"
+let iconFont = "30px Monospace"
+let labelFont = "24px Monospace"
+
+const iconLeft = "🛩️"
+const iconRight = "🚁"
+const paddingH = 5
+
+// Load a custom font
+// The font is linked in HTML head tag
+document.fonts.load('10pt "Lobster"').then(() => {
+  dfont = "18px Lobster"
+  iconFont = "30px Lobster"
+  labelFont = "24px Lobster"
+});
+
+c.font = labelFont
+const iconRightWidth = getTextWidth(c, iconRight)
 
 // Pertinent global variables
 let usernames = ["", ""]
@@ -33,44 +54,10 @@ let bullets = []
 let arenaId, numConn
 let health = [3, 3]
 
-// Style variables
-// Colors
-sbgcolor = "#7E6363"
-scolor = "#ffffff"
-pbgcolor = "#3E3232"
-lbgcolor = "#000000"
-lcolor = "#ffffff"
-bcolor = "#ffffff"
-
-const iconLeft = "🛩️"
-const iconRight = "🚁"
-const paddingH = 5
-let dfont = "14px cursive"
-let iconFont = "30px Monospace"
-let labelFont = "24px Monospace"
-
-
-// Load a custom font
-// The font is linked in HTML head tag
-document.fonts.load('10pt "Lobster"').then(() => {
-  dfont = "14px Lobster"
-  iconFont = "30px Lobster"
-  labelFont = "24px Lobster"
-});
-
-
-c.font = labelFont
-const iconRightWidth = getTextWidth(c, iconRight)
-
-
-// window.addEventListener("resize", () => {
-//   ww = window.innerWidth;
-//   wh = window.innerHeight;
-//   canvas.width = ww;
-//   canvas.height = wh;
-//   playground["width"] = canvas.width * 0.8 - playground.x
-//   playground["height"] = canvas.height * 0.8 - playground.y
-// })
+// Metric variables
+let lpos = [playground.x + paddingH, playground.y + playground.height / 2]
+let rpos = [playground.x + playground.width - iconRightWidth - paddingH - 1, playground.y + playground.height / 2]
+let scores = [0, 0]
 
 
 class Bullet {
@@ -80,11 +67,22 @@ class Bullet {
     this.x = x
     this.y = y
     this.from = from
+
+    let b = "*"
+    c.font = dfont
+    this.width = getTextWidth(c, b)
+    this.height = getTextHeight(c, b)
   }
 
   update() {
+
     if (this.from == 1) {
-      if (this.x < playground.x + playground.width - 1) {
+      let rbound = playground.x + playground.width - this.width
+      if (this.x < rbound) {
+        if (this.x + 10 > rbound) {
+          this.x = rbound
+          return
+        }
         this.x += 10
       } else {
         this.delete(this)
@@ -92,6 +90,10 @@ class Bullet {
     }
     if (this.from == 2) {
       if (this.x > playground.x) {
+        if (this.x - 10 < playground.x) {
+          this.x = playground.x
+          return
+        }
         this.x -= 10
       } else {
         this.delete(this)
@@ -113,29 +115,24 @@ class Bullet {
 }
 
 
-
-// Metric variables
-let lpos = [playground.x + paddingH, playground.y + playground.height / 2]
-let rpos = [playground.x + playground.width - iconRightWidth - paddingH - 1, playground.y + playground.height / 2]
-let scores = [0, 0]
-
-
 function drawSurround(data) {
   usernames = data.players
   arenaId = data.arenaId
-  let messageText = data.message
+  let messageText = data.message // This is redundant, leaving it to just remember the incoming data
   let arenaIdText = `Arena ID: ${data.arenaId}`
   let playersText = `Players in the Arena: [${data.players[0]}, ${data.players[1]}]`
-  let text = `${messageText}\n\n${arenaIdText}\n${playersText}`
-  let rect = {
-    x: 50,
-    y: 0,
-    width: 500,
-    height: 200 
-  }
-  let textQuad = r.getTextQuad(text, rect, dfont, "#ffffff", sbgcolor)
 
-  textQuad.renderTextQuad()
+  const x = 75
+  const y = 0
+  const pad = 5
+
+  c.font = dfont
+  const adjustedy = y + getTextHeight(c, arenaIdText) + pad + 7
+  const adjustedx = x + canvas.width - x * 2 - getTextWidth(c, playersText) - pad 
+  c.fillStyle = sbgcolor
+  c.fillRect(0, 0, canvas.width, canvas.height)
+  r.renderText(arenaIdText, x + pad, adjustedy, dfont, scolor)
+  r.renderText(playersText, adjustedx, adjustedy, dfont, scolor)
 }
 
 
@@ -165,12 +162,23 @@ function drawPlayground() {
       lives = lives + "🤎"
     }
     let width = getTextWidth(c, `${username} ${lives}`)
-    console.log(lbgcolor)
-    console.log(lcolor)
     let labelr = r.getTextButton(`${username} ${lives}`, playground.x + playground.width - width - 16, playground.y, labelFont, lcolor, lbgcolor)
     labelr.renderTextButton()
     r.renderText(iconRight, rpos[0], rpos[1], iconFont, lcolor)
   }
+
+  // Render line
+  let text = "🤎"
+  c.font = labelFont
+  let liney = playground.y + getTextHeight(c, text) + 16
+  let linex1 = playground.x
+  let linex2 = playground.x + playground.width
+  c.fillStyle = "#aaa"
+  c.beginPath()
+  c.moveTo(linex1, liney)
+  c.lineTo(linex2, liney)
+  c.stroke()
+
 
   // Render bullets
   for (let i = 0; i < bullets.length; i++) {
@@ -254,7 +262,6 @@ window.addEventListener("keydown", (event) => {
     }
     
     bulletId = Bullet.generateId()
-
     let bullet = new Bullet(bulletId, x, y, from)
     bullets.push(bullet)
 
@@ -273,17 +280,33 @@ window.addEventListener("keydown", (event) => {
 })
 
 function updatePlayerPos(key) {
-  
-  let delta = key == "j" ? 1 : -1
 
+  let text = "🤎"
+  c.font = labelFont
+  let upbound = playground.y + getTextHeight(c, text) + 16
+  c.font = iconFont
+  upbound = upbound + getTextHeight(c, iconLeft)
+  
   if (left) {
-    if (lpos[1] < playground.y + playground.height) {
-      lpos[1] += delta 
+
+    if (key == "j" && lpos[1] < playground.y + playground.height - 6) {
+      lpos[1] += 1 
     }
+
+    if (key == "k" && lpos[1] > upbound) {
+      lpos[1] += -1
+    }
+
   } else {
-    if (rpos[1] < playground.y + playground.height) {
-      rpos[1] += delta 
+
+    if (key == "j" && rpos[1] < playground.y + playground.height - 6) {
+      rpos[1] += 1 
     }
+
+    if (key == "k" && rpos[1] > upbound) {
+      rpos[1] += -1
+    }
+
   }
 
   let data = {
