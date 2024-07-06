@@ -74,9 +74,20 @@ class Bullet {
     this.height = getTextHeight(c, b)
   }
 
+  // Todo: There are bugs like bullet deleting at wrong places without hitting the icons
   update() {
 
     if (this.from == 1) {
+
+      c.font = iconFont
+      let rtextHeight = getTextHeight(c, iconRight)
+      if (this.x + 10 > rpos[0] && this.y < rpos[1] && this.y > rpos[1] - rtextHeight) {
+        this.x = rpos[0]
+        health[1] += -1
+        this.delete(this)
+        return
+      }
+
       let rbound = playground.x + playground.width - this.width
       if (this.x < rbound) {
         if (this.x + 10 > rbound) {
@@ -87,8 +98,21 @@ class Bullet {
       } else {
         this.delete(this)
       }
+
     }
+
     if (this.from == 2) {
+
+      c.font = iconFont
+      let ltextWidth = getTextWidth(c, iconLeft)
+      let ltextHeight = getTextHeight(c, iconLeft)
+      if (this.x - 10 < lpos[0] + ltextWidth && this.y < lpos[1] && this.y > lpos[1] - ltextHeight) {
+        this.x = lpos[0] + ltextWidth
+        health[0] += -1
+        this.delete(this)
+        return
+      }
+      
       if (this.x > playground.x) {
         if (this.x - 10 < playground.x) {
           this.x = playground.x
