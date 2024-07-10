@@ -26,13 +26,13 @@ class TextButton {
 
   renderTextButton() {
     this.c.font = this.font
-    let rheight = getTextHeight(this.c, this.text)
+    let rawheight = getTextHeight(this.c, this.text)
     let height = getTextHeight(this.c, this.text) + this.padding * 2
     let width = getTextWidth(this.c, this.text) + this.padding * 2
     this.c.fillStyle = this.bgcolor
     this.c.fillRect(this.x, this.y, width, height)
     this.c.fillStyle = this.color
-    this.c.fillText(this.text, this.x + this.padding, this.y + rheight + this.padding)
+    this.c.fillText(this.text, this.x + this.padding, this.y + rawheight + this.padding)
   }
 }
 

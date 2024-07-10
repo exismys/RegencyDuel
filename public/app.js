@@ -32,8 +32,8 @@ let dfont = "18px Monospace"
 let iconFont = "30px Monospace"
 let labelFont = "24px Monospace"
 
-const iconLeft = "🛩️"
-const iconRight = "🚁"
+const iconLeft = ">"
+const iconRight = "<"
 const paddingH = 5
 
 // Load a custom font
@@ -81,7 +81,8 @@ class Bullet {
 
       c.font = iconFont
       let rtextHeight = getTextHeight(c, iconRight)
-      if (this.x + 10 > rpos[0] && this.y < rpos[1] && this.y > rpos[1] - rtextHeight) {
+      console.log(`${this.y} ${this.height} ${rpos[1]} ${rtextHeight}`)
+      if (this.x + 10 > rpos[0] && this.y - this.height <= rpos[1] && this.y >= rpos[1] - rtextHeight) {
         this.x = rpos[0]
         health[1] += -1
         this.delete(this)
@@ -98,7 +99,6 @@ class Bullet {
       } else {
         this.delete(this)
       }
-
     }
 
     if (this.from == 2) {
@@ -106,7 +106,7 @@ class Bullet {
       c.font = iconFont
       let ltextWidth = getTextWidth(c, iconLeft)
       let ltextHeight = getTextHeight(c, iconLeft)
-      if (this.x - 10 < lpos[0] + ltextWidth && this.y < lpos[1] && this.y > lpos[1] - ltextHeight) {
+      if (this.x - 10 < lpos[0] + ltextWidth && this.y - this.height <= lpos[1] && this.y >= lpos[1] - ltextHeight) {
         this.x = lpos[0] + ltextWidth
         health[0] += -1
         this.delete(this)
