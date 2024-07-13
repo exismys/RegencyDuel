@@ -27,6 +27,7 @@ type IMessage struct {
   BulletPos [2]float32 `json:"bulletPos"`
   BulletFrom int `json:"from"`
   BulletId int `json:"bulletId"`
+  Winner string `json:"winner"`
 }
 
 type OMessage struct {
@@ -187,7 +188,14 @@ func (s *Server) processNewConn(ws *websocket.Conn) {
       arenaId := imessage.ArenaId
       data, _ := json.Marshal(&imessage)
       s.sendToOpponent(data, arenaId, ws)
-    } 
+    }
+
+    // Game over event
+    if imessage.Kind == "game-over" {
+      arenaId := imessage.ArenaId
+      data, _ := json.Marshal(&imessage)
+      s.broadcastMessage(data, arenaId)
+    }
 
 	}
 }

@@ -74,7 +74,6 @@ class Bullet {
     this.height = getTextHeight(c, b)
   }
 
-  // Todo: There are bugs like bullet deleting at wrong places without hitting the icons
   update() {
 
     if (this.from == 1) {
@@ -86,6 +85,13 @@ class Bullet {
         this.x = rpos[0]
         health[1] += -1
         this.delete(this)
+
+        if (health[1] == -1) {
+          socket.send(JSON.stringify({
+            type: "game-over",
+            winner: usernames[0]
+          }))
+        }
         return
       }
 
@@ -110,6 +116,13 @@ class Bullet {
         this.x = lpos[0] + ltextWidth
         health[0] += -1
         this.delete(this)
+
+        if (health[0] == -1) {
+          socket.send(JSON.stringify({
+            type: "game-over",
+            winner: usernames[1]
+          }))
+        }
         return
       }
       
@@ -224,7 +237,7 @@ animatePlayground()
 
 // Socket connection events
 let socketUrl = "ws://localhost:5000/ws"
-let socket = new WebSocket(socketUrl);
+var socket = new WebSocket(socketUrl);
 
 socket.onopen = function(event) {
   let username = prompt("Hey! State your username to join the arena: ")
@@ -253,6 +266,11 @@ socket.onmessage = function(event) {
   } else if (data.type == "bullet") {
     let bullet = new Bullet(data.bulletId, data.bulletPos[0], data.bulletPos[1], data.from)
     bullets.push(bullet)
+  } else if (data.type == "game-over") {
+    alert(`Game Over\n${data.winner} won.`)
+    if (socket.readyState == WebSocket.OPEN) {
+      socket.close()
+    }
   }
 };
 
