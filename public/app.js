@@ -1,16 +1,17 @@
-let ww = window.innerWidth;
-let wh = window.innerHeight;
-
 const canvas = document.querySelector("canvas");
-canvas.width = 1366
-canvas.height = 700
+const canvasWidth = 1366
+const canvasHeight = 768
+canvas.style.width = `${canvasWidth}px`
+canvas.style.height = `${canvasHeight}px`
+const dpr = window.devicePixelRatio || 1
+canvas.width = canvasWidth * dpr
+canvas.height = canvasHeight * dpr
 
 const c = canvas.getContext("2d");
 
 // This is my custom class for text related renderings
-// This requires text-renderer.js import
+// This requires text-renderer.js import in the HTML file
 const r = new Renderer(c)
-
 
 // Playground configurations
 const playground = {
@@ -58,7 +59,6 @@ let health = [3, 3]
 let lpos = [playground.x + paddingH, playground.y + playground.height / 2]
 let rpos = [playground.x + playground.width - iconRightWidth - paddingH - 1, playground.y + playground.height / 2]
 let scores = [0, 0]
-
 
 class Bullet {
 
@@ -150,7 +150,6 @@ class Bullet {
     return id
   }
 }
-
 
 function drawSurround(data) {
   usernames = data.players
